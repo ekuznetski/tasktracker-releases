@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'tasktracker is this project'\\''s shared work + knowledge base. BEFORE you start: call the tasktracker MCP tool get_started to load your projects + recent decisions, then search(q) the KB for prior ADRs/notes - never re-derive what it already records. AS you work: capture non-obvious findings as notes. ON close: graduate the durable decision into an ADR, then set the issue done.'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Before you finish: did you capture new decisions/findings as tasktracker notes, and graduate the durable one into an ADR? Update the issue status if the work moved.'"
+          }
+        ]
+      }
+    ]
+  }
+}

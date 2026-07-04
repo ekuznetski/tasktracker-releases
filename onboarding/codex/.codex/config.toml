@@ -1,0 +1,10 @@
+# Codex CLI hook pack (TT-157): inject the tasktracker KB-first reminder at session start.
+# Merge these tables into your repo-local .codex/config.toml (or ~/.codex/config.toml).
+[[hooks.SessionStart]]
+matcher = "startup|resume"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = 'bash "$(git rev-parse --show-toplevel)/.codex/hooks/tasktracker-reminder.sh"'
+statusMessage = "Loading tasktracker KB reminder"
+timeout = 10
