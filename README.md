@@ -53,6 +53,8 @@ chmod 600 .env
 
 cat > Caddyfile <<'EOF'
 {$TT_DOMAIN} {
+    # Private instance: keep it out of search engines.
+    respond /robots.txt "User-agent: *\nDisallow: /" 200
     reverse_proxy app:3000
 }
 EOF
@@ -72,8 +74,10 @@ services:
 
   # Optional UNATTENDED auto-update (see "Automatic updates"). Enable with:
   #   docker compose --profile autoupdate up -d
+  # nicholas-fedor/watchtower is the maintained fork (same flags/labels); the original
+  # containrrr image is abandoned and crashes on Docker Engine 25+ (client API too old).
   watchtower:
-    image: containrrr/watchtower:1.7.1
+    image: ghcr.io/nicholas-fedor/watchtower:1.19.0
     profiles: ["autoupdate"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -152,6 +156,18 @@ curl -s https://DOMAIN/version
 
 If `/ready` is not reachable: `docker compose ps` (all Up?), `docker compose logs app | tail -30`,
 `docker compose logs caddy | tail -10` (certificate errors = DNS not pointing here yet).
+
+**Domain behind Cloudflare?** Caddy's automatic Let's Encrypt only works when the DNS
+record points DIRECTLY at this box. Pick ONE:
+
+- **DNS-only (simplest):** in Cloudflare DNS, switch the record to "DNS only" (grey
+  cloud). Automatic certificates then just work.
+- **Keep the proxy (orange cloud):** issue a Cloudflare **Origin Certificate**
+  (SSL/TLS -> Origin Server -> Create, 15-year), save the two PEMs next to the
+  Caddyfile as `origin.pem` / `origin.key`, mount them into caddy
+  (`- ./origin.pem:/etc/caddy/origin.pem:ro` and the key alike), and change the
+  Caddyfile site block to use them: `tls /etc/caddy/origin.pem /etc/caddy/origin.key`.
+  Set the zone's SSL mode to **Full (strict)**. No renewals needed.
 
 ## 5. First sign-in + projects
 
@@ -265,6 +281,11 @@ Know the trade-off: updates (including database migrations) then happen unattend
 whatever hour the check lands. Keep it off if you prefer pressing the button when the
 badge shows up. If your `docker login` was done as a non-root user, adjust the
 `/root/.docker/config.json` mount to that user's path.
+
+Two credential rules for unattended pulls:
+- Log in with a **long-lived (non-expiring) `read:packages` PAT**: when an expiring
+  token dies, watchtower's pulls start failing with 401 **silently** and updates stop.
+- After rotating the token, re-run step 2 and `docker compose restart watchtower`.
 
 Pin instead of `latest` by setting the image tag to a git sha, e.g.
 `ghcr.io/ekuznetski/tasktracker:0418099`.
