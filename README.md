@@ -62,7 +62,9 @@ EOF
 cat > docker-compose.yml <<'EOF'
 services:
   app:
-    image: ghcr.io/ekuznetski/tasktracker:latest
+    # Pin a specific build by setting TASKTRACKER_TAG=<git-sha> in .env; unset = latest.
+    # Pinning makes `docker compose up -d` pull deterministically (see step 9).
+    image: ghcr.io/ekuznetski/tasktracker:${TASKTRACKER_TAG:-latest}
     env_file: .env
     environment:
       DATABASE_PATH: /data/tasktracker.db
@@ -175,6 +177,24 @@ record points DIRECTLY at this box. Pick ONE:
   Caddyfile site block to use them: `tls /etc/caddy/origin.pem /etc/caddy/origin.key`.
   Set the zone's SSL mode to **Full (strict)**. No renewals needed.
 
+**Behind an existing reverse proxy?** If this box already runs nginx / Traefik / another
+proxy on 80/443, do NOT let the bundled Caddy fight it for those ports. Run tasktracker
+WITHOUT Caddy and let your own proxy terminate TLS:
+
+- In `docker-compose.yml` delete (or comment out) the whole `caddy` service and its
+  `caddy-data` / `caddy-config` volumes, and expose the app on a local port by adding to
+  the `app` service:
+
+  ```yaml
+      ports:
+        - "127.0.0.1:3000:3000"   # bind localhost so only your proxy reaches it
+  ```
+- Point your proxy at `http://127.0.0.1:3000` for `DOMAIN` and terminate TLS there
+  (nginx: `proxy_pass http://127.0.0.1:3000;` plus `proxy_set_header Host $host;` and the
+  `X-Forwarded-*` headers). The Caddyfile is then unused.
+- Keep `BETTER_AUTH_URL` / `BASE_URL` = `https://DOMAIN` (the PUBLIC url your proxy
+  serves, not the internal port) - they must match what the browser sees.
+
 **Enable auto-update now (recommended - do not skip).** So the instance pulls new
 releases on its own, turn on the bundled watchtower. Forward-only migrations are
 snapshotted before they apply (see step 10), so an unattended update stays recoverable:
@@ -198,11 +218,16 @@ badge (step 9). See step 9 for the credential rules unattended pulls need.
 
 ## 6. Connect agents (per developer machine)
 
+This is a per-person, per-machine step done by a HUMAN - it needs an interactive browser
+sign-in, so an agent cannot (and should not try to) run it headless. If an agent deployed
+the instance, it should hand this command to the user to run on each dev machine:
+
 ```bash
 claude mcp add --transport http --client-id tasktracker-cli --callback-port 8080 tasktracker https://$DOMAIN/mcp
 ```
 
-Sign in once in the browser window it opens; restart the agent session.
+It opens a browser at the tracker for a one-time OAuth sign-in (with the local callback);
+approve it, then restart the agent session.
 
 **Then wire the session-start hook into EVERY repo your agents work in - do not skip
 this.** Without it agents miss the KB-first reminder and re-derive decisions the KB
@@ -292,12 +317,29 @@ Notes:
 
 Admins see an **"Update available" badge** in the top bar when a newer image is
 published (the instance polls a public release channel hourly; disable with
-`UPDATE_CHECK=false` in `.env`). To update manually:
+`UPDATE_CHECK=false` in `.env`). **The badge only NOTIFIES - it does not apply
+anything.** Something has to actually pull the new image: either you (manual) or
+watchtower (automatic).
+
+**Manual update.** `docker compose up -d` alone does NOT re-pull an image tag it has
+already cached - a plain redeploy keeps running the OLD `:latest`. You must pull first:
 
 ```bash
 cd /opt/tasktracker && docker compose pull app && docker compose up -d app
 curl -s https://$DOMAIN/version   # confirm the new gitSha
 ```
+
+**Recommended: pin a git sha (deterministic, CI/compose-friendly).** Especially when
+tasktracker is folded into your own compose stack or CI - where a forgotten `pull` means
+`:latest` silently never advances - set the tag explicitly and redeploy; a changed tag
+always pulls:
+
+```bash
+echo "TASKTRACKER_TAG=<new-git-sha>" >> .env   # or edit the existing line
+docker compose up -d app                        # a new tag is fetched deterministically
+```
+
+The sha for each release is the `gitSha` from `/version` (and the release notes).
 
 **Automatic updates (recommended - enabled in step 4).** The server can update ITSELF:
 the compose file already contains a `watchtower` service that checks the registry hourly
@@ -313,15 +355,14 @@ docker compose logs watchtower | tail   # expect "Watchtower ... Scheduling firs
 Know the trade-off: updates (including database migrations) then happen unattended at
 whatever hour the check lands. Keep it off if you prefer pressing the button when the
 badge shows up. If your `docker login` was done as a non-root user, adjust the
-`/root/.docker/config.json` mount to that user's path.
+`/root/.docker/config.json` mount to that user's path. (Watchtower only tracks a moving
+tag like `:latest`; if you pin `TASKTRACKER_TAG` to a sha it has nothing to advance to,
+so pinning and auto-update are mutually exclusive - pick one.)
 
 Two credential rules for unattended pulls:
 - Log in with a **long-lived (non-expiring) `read:packages` PAT**: when an expiring
   token dies, watchtower's pulls start failing with 401 **silently** and updates stop.
 - After rotating the token, re-run step 2 and `docker compose restart watchtower`.
-
-Pin instead of `latest` by setting the image tag to a git sha, e.g.
-`ghcr.io/ekuznetski/tasktracker:0418099`.
 
 ## 10. Recovering from a failed migration
 
