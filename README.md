@@ -175,6 +175,18 @@ record points DIRECTLY at this box. Pick ONE:
   Caddyfile site block to use them: `tls /etc/caddy/origin.pem /etc/caddy/origin.key`.
   Set the zone's SSL mode to **Full (strict)**. No renewals needed.
 
+**Enable auto-update now (recommended - do not skip).** So the instance pulls new
+releases on its own, turn on the bundled watchtower. Forward-only migrations are
+snapshotted before they apply (see step 10), so an unattended update stays recoverable:
+
+```bash
+docker compose --profile autoupdate up -d
+docker compose logs watchtower | tail   # expect "Watchtower ... Scheduling first run"
+```
+
+Prefer to press the button yourself instead? Skip this and use the "Update available"
+badge (step 9). See step 9 for the credential rules unattended pulls need.
+
 ## 5. First sign-in + projects
 
 1. Open `https://$DOMAIN`, click "No account? Create one", register with **$ADMIN_EMAIL**
@@ -190,11 +202,25 @@ record points DIRECTLY at this box. Pick ONE:
 claude mcp add --transport http --client-id tasktracker-cli --callback-port 8080 tasktracker https://$DOMAIN/mcp
 ```
 
-Sign in once in the browser window it opens; restart the agent session. Then, in each
-codebase, drop the session-start reminder hook so every agent session begins with
-`get_started` + KB search - packs for Claude Code / Cursor / Codex live in
+Sign in once in the browser window it opens; restart the agent session.
+
+**Then wire the session-start hook into EVERY repo your agents work in - do not skip
+this.** Without it agents miss the KB-first reminder and re-derive decisions the KB
+already holds. The packs live in
 [`onboarding/`](https://github.com/ekuznetski/tasktracker-releases/tree/main/onboarding)
-(also shown in the UI under Access control).
+(also shown in the UI under Access control -> Connect an agent). Copy the matching pack
+into the repo root:
+
+```bash
+# Claude Code (merge into an existing .claude/settings.json if you have one):
+cp -R onboarding/claude-code/.claude .
+# Cursor:      cp -R onboarding/cursor/.cursor .
+# Codex:       cp -R onboarding/codex/.codex .
+```
+
+Reload the window / start a fresh agent session, then VERIFY it worked: the new session
+should open by calling the `get_started` tool. If it doesn't, the hook is not in place -
+re-copy the pack and reload.
 
 ## 7. Backup (recommended - default is NO backup)
 
@@ -273,10 +299,11 @@ cd /opt/tasktracker && docker compose pull app && docker compose up -d app
 curl -s https://$DOMAIN/version   # confirm the new gitSha
 ```
 
-**Automatic updates (optional).** The server can update ITSELF: the compose file
-already contains a `watchtower` service that checks the registry hourly and, when a
-new image appears, pulls it and recreates the app container (migrations run on boot;
-the old image is cleaned up). It reuses the registry login from step 2. Turn it on:
+**Automatic updates (recommended - enabled in step 4).** The server can update ITSELF:
+the compose file already contains a `watchtower` service that checks the registry hourly
+and, when a new image appears, pulls it and recreates the app container (migrations run
+on boot, snapshotted first per step 10; the old image is cleaned up). It reuses the
+registry login from step 2. If you did not already enable it in step 4, turn it on:
 
 ```bash
 docker compose --profile autoupdate up -d
