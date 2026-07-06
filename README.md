@@ -84,7 +84,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker/config.json:/config.json:ro
-    command: --scope tasktracker --interval 3600 --cleanup
+    command: --scope tasktracker --interval 300 --cleanup
     labels:
       - com.centurylinklabs.watchtower.scope=tasktracker
     restart: unless-stopped
@@ -342,10 +342,12 @@ docker compose up -d app                        # a new tag is fetched determini
 The sha for each release is the `gitSha` from `/version` (and the release notes).
 
 **Automatic updates (recommended - enabled in step 4).** The server can update ITSELF:
-the compose file already contains a `watchtower` service that checks the registry hourly
-and, when a new image appears, pulls it and recreates the app container (migrations run
-on boot, snapshotted first per step 10; the old image is cleaned up). It reuses the
-registry login from step 2. If you did not already enable it in step 4, turn it on:
+the compose file already contains a `watchtower` service that checks the registry every 5
+minutes (`--interval 300`) and, when a new image appears, pulls it and recreates the app
+container (migrations run on boot, snapshotted first per step 10; the old image is cleaned
+up). A 5-minute poll is a tiny registry manifest check - cheap; raise `--interval` (in
+seconds) if you prefer slower. It reuses the registry login from step 2. If you did not
+already enable it in step 4, turn it on:
 
 ```bash
 docker compose --profile autoupdate up -d
