@@ -135,22 +135,28 @@ dbs:
 EOF
 ```
 
-Now replace the placeholders inside the files (three `sed`s, or edit by hand):
+Set your two values once (as shell vars, reused by every command below), then substitute
+them into the files:
 
 ```bash
-sed -i "s/ADMIN_EMAIL/you@company.com/" .env
-sed -i "s/DOMAIN/tracker.example.com/" .env docker-compose.yml
+export DOMAIN=tracker.example.com   # your DNS A-record
+export ADMIN_EMAIL=you@company.com  # the first/admin account
+sed -i "s/ADMIN_EMAIL/$ADMIN_EMAIL/" .env
+sed -i "s/DOMAIN/$DOMAIN/" .env docker-compose.yml
 grep -E "DOMAIN|ADMIN" .env docker-compose.yml   # verify: no placeholder left
 ```
+
+The rest of this guide uses `$DOMAIN`, so run the following steps in the SAME shell
+session (re-run the two `export`s if you open a new terminal).
 
 ## 4. Start + verify
 
 ```bash
 docker compose up -d
 sleep 15
-curl -fsS https://DOMAIN/ready
+curl -fsS https://$DOMAIN/ready
 # expect JSON with "status":"Healthy" (the app migrates on first boot)
-curl -s https://DOMAIN/version
+curl -s https://$DOMAIN/version
 # expect {"name":"tasktracker","version":...,"gitSha":"..."}
 ```
 
@@ -171,7 +177,7 @@ record points DIRECTLY at this box. Pick ONE:
 
 ## 5. First sign-in + projects
 
-1. Open `https://DOMAIN`, click "No account? Create one", register with **ADMIN_EMAIL**
+1. Open `https://$DOMAIN`, click "No account? Create one", register with **$ADMIN_EMAIL**
    (email + password). That account is the admin; anyone else needs an invite.
 2. Create your projects (top-left switcher -> Create project) - one per codebase,
    e.g. `PROJ1`, `PROJ2`. Both live in this one instance.
@@ -181,7 +187,7 @@ record points DIRECTLY at this box. Pick ONE:
 ## 6. Connect agents (per developer machine)
 
 ```bash
-claude mcp add --transport http --client-id tasktracker-cli --callback-port 8080 tasktracker https://DOMAIN/mcp
+claude mcp add --transport http --client-id tasktracker-cli --callback-port 8080 tasktracker https://$DOMAIN/mcp
 ```
 
 Sign in once in the browser window it opens; restart the agent session. Then, in each
@@ -264,7 +270,7 @@ published (the instance polls a public release channel hourly; disable with
 
 ```bash
 cd /opt/tasktracker && docker compose pull app && docker compose up -d app
-curl -s https://DOMAIN/version   # confirm the new gitSha
+curl -s https://$DOMAIN/version   # confirm the new gitSha
 ```
 
 **Automatic updates (optional).** The server can update ITSELF: the compose file
@@ -289,6 +295,35 @@ Two credential rules for unattended pulls:
 
 Pin instead of `latest` by setting the image tag to a git sha, e.g.
 `ghcr.io/ekuznetski/tasktracker:0418099`.
+
+## 10. Recovering from a failed migration
+
+Migrations run on boot and are forward-only. Before applying a pending migration to an
+already-populated database, the app first checkpoints the WAL and copies the database
+aside to `/data/backups/pre-migrate-<timestamp>.db` (inside the `tasktracker-data`
+volume). If a migration then fails, the app logs `MIGRATION FAILED ...` with the exact
+snapshot path and exits without upgrading the schema. Restore locally:
+
+```bash
+cd /opt/tasktracker
+docker compose logs app | grep -A3 "MIGRATION FAILED"   # note the snapshot path
+
+# Pin the image to the last known-good tag FIRST, so the restored (older) DB is not
+# immediately re-upgraded by the same broken migration on the next boot.
+sed -i 's#tasktracker:latest#tasktracker:<PREVIOUS_GITSHA>#' docker-compose.yml
+docker compose stop app
+
+# Copy the pre-migrate snapshot over the live DB (adjust the timestamp to the log).
+docker compose run --rm --entrypoint sh app -c \
+  'cp /data/backups/pre-migrate-<timestamp>.db /data/tasktracker.db && rm -f /data/tasktracker.db-wal /data/tasktracker.db-shm'
+docker compose up -d app
+curl -s https://$DOMAIN/version   # confirm it booted on the pinned tag
+```
+
+Then report the failing migration upstream and unpin once a fixed image is published.
+If litestream backup (step 7) is on, `litestream restore` from the S3 replica is the
+alternative (it restores the last replicated state); see the
+[runbook](https://github.com/ekuznetski/tasktracker-releases/blob/main/runbook.md).
 
 ## Troubleshooting
 
