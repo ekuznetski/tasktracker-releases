@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.10 - 2026-07-07
+
+- TT-209: derive Codex CLI's per-server OAuth callback in the seed so it connects out of the box
+
 ## v0.1.9 - 2026-07-07
 
 - TT-208: whitelist mainstream MCP client OAuth callbacks (Claude Desktop/web, Cursor, VS Code, opencode/Cline/Kilo, Gemini, Goose)
