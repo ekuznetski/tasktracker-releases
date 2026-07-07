@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.11 - 2026-07-07
+
+- TT-210: trust chatgpt.com connector-callback prefix so any user can connect ChatGPT (DCR stays off)
+
 ## v0.1.10 - 2026-07-07
 
 - TT-209: derive Codex CLI's per-server OAuth callback in the seed so it connects out of the box
