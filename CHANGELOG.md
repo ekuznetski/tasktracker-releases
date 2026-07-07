@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.13 - 2026-07-07
+
+- TT-213: flush SSE headers immediately + X-Accel-Buffering so /events is stable behind a proxy
+- TT-212: add /consent page so prompt=consent clients (Claude, ChatGPT) complete OAuth
+
 ## v0.1.12 - 2026-07-07
 
 - TT-211: resume the OAuth authorize flow after sign-in so MCP connectors complete
