@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.12 - 2026-07-07
+
+- TT-211: resume the OAuth authorize flow after sign-in so MCP connectors complete
+
 ## v0.1.11 - 2026-07-07
 
 - TT-210: trust chatgpt.com connector-callback prefix so any user can connect ChatGPT (DCR stays off)
