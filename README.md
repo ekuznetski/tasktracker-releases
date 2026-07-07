@@ -227,7 +227,19 @@ claude mcp add --transport http --client-id tasktracker-cli --callback-port 8080
 ```
 
 It opens a browser at the tracker for a one-time OAuth sign-in (with the local callback);
-approve it, then restart the agent session.
+approve it.
+
+**Then RESTART the agent session - this is mandatory, not optional.** MCP tools are loaded
+only at session start, so an agent that keeps working in the SAME session never sees the
+tasktracker tools and silently falls back to guessing. After `claude mcp add`, the agent
+must ask the user to start a fresh session (or reload the window) before doing any KB/issue
+work, then confirm the tools are present by calling `get_started`.
+
+**Agents use the MCP tools ONLY - never the REST `/api/v1`.** `/api/v1` is the browser's
+surface (cookie session auth); it is NOT an agent API and has no token auth. Everything an
+agent needs - issues, notes, links, search, context - is an MCP tool (`create_issue`,
+`create_note`, `add_link`, `search`, `get_context`, ...). If an agent finds itself calling
+REST endpoints, it is in the wrong session: reload and use the tools.
 
 **Then wire the session-start hook into EVERY repo your agents work in - do not skip
 this.** Without it agents miss the KB-first reminder and re-derive decisions the KB
