@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.17 - 2026-07-11
+
+- TT-221: prompt on any real server sha ahead of the bundle, not just server-changed (#78)
+- TT-221: land deployed frontend updates in the browser (#77)
+- TT-220: extend board column highlight/drop-zone to full scroll height (#76)
+
 ## v0.1.16 - 2026-07-11
 
 - TT-219: fuzzy search - typo and partial-word tolerance via index-vocabulary correction (#75)
