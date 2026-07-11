@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.16 - 2026-07-11
+
+- TT-219: fuzzy search - typo and partial-word tolerance via index-vocabulary correction (#75)
+
 ## v0.1.15 - 2026-07-11
 
 - TT-218: relax zero-hit multi-term search to OR-of-significant-terms (#74)
