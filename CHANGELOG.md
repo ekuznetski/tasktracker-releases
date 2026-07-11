@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.14 - 2026-07-11
+
+- TT-216: make search match issue number, display key and git branch
+- TT-215: list all connectable MCP clients in the connect-agent dialog
+
 ## v0.1.13 - 2026-07-07
 
 - TT-213: flush SSE headers immediately + X-Accel-Buffering so /events is stable behind a proxy
