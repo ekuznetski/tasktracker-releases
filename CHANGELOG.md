@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.18 - 2026-07-11
+
+- TT-220: stretch every board column to the full scroll height (#80)
+- design: update tasktracker.pen (#79)
+
 ## v0.1.17 - 2026-07-11
 
 - TT-221: prompt on any real server sha ahead of the bundle, not just server-changed (#78)
