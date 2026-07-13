@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.19 - 2026-07-13
+
+- TT-224: wait_for_changes long-poll MCP tool (#83)
+- TT-223: stop Assignee autofill popover and truncate long property values (#82)
+- TT-222: rank exact issue-number/key first in list_issues(q=) (#81)
+
 ## v0.1.18 - 2026-07-11
 
 - TT-220: stretch every board column to the full scroll height (#80)
