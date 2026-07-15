@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.21 - 2026-07-15
+
+- TT-228: lease must not evict active work (#85)
+
 ## v0.1.20 - 2026-07-14
 
 - TT-225: loud lease expiry + wait_for_changes proxy hardening + coordination guide (#84)
