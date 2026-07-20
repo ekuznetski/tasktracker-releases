@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.22 - 2026-07-20
+
+- docs: append DEPLOYER-FEEDBACK Part 3 (two-agent coordination pain points)
+- TT-229: OAuth/MCP access diagnosability - identity + reason in logs (#86)
+
 ## v0.1.21 - 2026-07-15
 
 - TT-228: lease must not evict active work (#85)
