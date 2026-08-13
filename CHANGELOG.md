@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.23 - 2026-08-13
+
+- release recipe: clear only a leftover e2e server, never whatever holds :3100 (#88)
+- MT-240/MT-238: manual board order, top add-issue control, reporter (#87)
+
 ## v0.1.22 - 2026-07-20
 
 - docs: append DEPLOYER-FEEDBACK Part 3 (two-agent coordination pain points)
