@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.25 - 2026-08-16
+
+- the shipped binary would not compile: bytecode builds reject top-level await (#92)
+- link previews showed white corners and a relative og:image (#91)
+- MT-267: a stateless server answered GET /mcp with a stream that never speaks (#90)
+
 ## v0.1.24 - 2026-08-16
 
 - MT-267: Cursor's desktop callback moved to a localhost port we never registered (#89)
