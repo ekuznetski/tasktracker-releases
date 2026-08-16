@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.26 - 2026-08-16
+
+- agents had no issue URL to hand a human, so they invented one (#93)
+
 ## v0.1.25 - 2026-08-16
 
 - the shipped binary would not compile: bytecode builds reject top-level await (#92)
