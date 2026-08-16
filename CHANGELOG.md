@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.24 - 2026-08-16
+
+- MT-267: Cursor's desktop callback moved to a localhost port we never registered (#89)
+
 ## v0.1.23 - 2026-08-13
 
 - release recipe: clear only a leftover e2e server, never whatever holds :3100 (#88)
